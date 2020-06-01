@@ -65,7 +65,8 @@ def main():
     reg_k_nearest_neighbors, reg_prediction = knn(
         reg_data, reg_query, k=3, distance_fn=euclidean_distance, choice_fn=mean
     )
-    
+    print(reg_prediction)
+
     '''
     # Classification Data
     # 
@@ -90,6 +91,7 @@ def main():
     clf_k_nearest_neighbors, clf_prediction = knn(
         clf_data, clf_query, k=3, distance_fn=euclidean_distance, choice_fn=mode
     )
+    print(clf_prediction)
 
 if __name__ == '__main__':
     main()
