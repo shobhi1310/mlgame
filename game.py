@@ -1,5 +1,7 @@
 import pygame
 import random
+from collections import Counter
+import math
 
 class Node():
 
@@ -7,6 +9,41 @@ class Node():
         self.x = x
         self.y = y
         self.color = color
+
+def knn(grid, query_node, k, distance_fn, choice_fn):
+    neighbor_distances_and_indices = []
+    
+    for i in range(len(grid)):
+        for j in range(len(grid[i])):
+            if( grid[i][j].x == query_node.x and grid[i][j].y == query_node.y):
+                pass
+            elif(grid[i][j].color > 0):
+                distance = distance_fn(grid[i][j],query_node)
+                neighbor_distances_and_indices.append((distance,i,j))
+
+    
+    sorted_neighbor_distances_and_indices = sorted(neighbor_distances_and_indices)
+    
+    k_nearest_distances_and_indices = sorted_neighbor_distances_and_indices[:k]
+    
+    k_nearest_labels = [grid[i][j].color for distance, i, j in k_nearest_distances_and_indices]
+
+    return choice_fn(k_nearest_labels)
+
+def mean(labels):
+    return sum(labels) / len(labels)
+
+def mode(labels):
+    # print(labels)
+    # print(Counter(labels).most_common(1))
+    return Counter(labels).most_common(1)[0][0]
+
+def euclidean_distance(point1, point2):
+    sum_squared_distance = 0
+    sum_squared_distance += math.pow(point1.x - point2.x, 2)
+    sum_squared_distance += math.pow(point1.y - point2.y, 2)
+    return math.sqrt(sum_squared_distance)
+
 
 from pygame.locals import (
     K_UP,
@@ -51,7 +88,7 @@ for i in range(rows):
     r = []
     x = start_x
     for j in range(cols):
-        r.append(Node(x,y,dull))
+        r.append(Node(x,y,0))
         x += 2*radius + width
     grid.append(r)
     y += 2*radius + height
@@ -60,7 +97,7 @@ for i in range(rows):
 for i in range(int(R/2)):
     x = random.randint(0,rows-1)
     y = random.randint(0,cols-1)
-    grid[x][y].color = blue
+    grid[x][y].color = 1
 
 #coloring red
 for i in range(int(R/2)):
@@ -68,13 +105,12 @@ for i in range(int(R/2)):
     while(check):
         x = random.randint(0,rows-1)
         y = random.randint(0,cols-1)
-        if grid[x][y].color == blue:
+        if grid[x][y].color == 1:
             x = random.randint(0,rows-1)
             y = random.randint(0,cols-1)
         else:
-            grid[x][y].color = red
+            grid[x][y].color = 2
             check = False
-
 
 # print(grid)
 
@@ -95,16 +131,16 @@ while running:
                 for i in range(rows):
                     for j in range(cols):
                         if((X-grid[i][j].x)**2 + (Y-grid[i][j].y)**2 - radius**2) <= 0:
-                            print(i)
-                            print(j)
-                            grid[i][j].color = blue
+                            # print(i)
+                            # print(j)
+                            grid[i][j].color = knn(grid,grid[i][j],k=3,distance_fn=euclidean_distance, choice_fn=mode)
                             # pygame.display.update()
                             break
-                        
+
     #drawing on the screen
     for row in grid:
         for node in row:
-            pygame.draw.circle(screen, node.color, (node.x, node.y), radius)
+            pygame.draw.circle(screen, color[node.color], (node.x, node.y), radius)
             pygame.draw.circle(screen, white, (node.x, node.y), radius, 1)
 
     pygame.display.flip()
