@@ -59,8 +59,8 @@ pygame.init()
 
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 800
-start_x = 20
-start_y = 20
+start_x = 60
+start_y = 80
 end = 501
 rows = 20
 cols = 30
@@ -68,6 +68,8 @@ width = 5
 height = 5
 R = 8
 radius = 10
+r_count = int(R/2)
+b_count = int(R/2)
 
 blue = (0,0,255)
 red = (255,0,0)
@@ -80,6 +82,17 @@ color=[dull,blue,red]
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 running = True
+
+
+def red_count(r_count):
+    font = pygame.font.SysFont('comicsansms', 40)
+    text = font.render("Reds: "+str(r_count), True, red)
+    screen.blit(text,(10,0))
+
+def blue_count(r_count):
+    font = pygame.font.SysFont('comicsansms', 40)
+    text = font.render("Blues: "+str(b_count), True, blue)
+    screen.blit(text,(800,0))
 
 #initialising grid
 grid = []
@@ -134,13 +147,21 @@ while running:
                             # print(i)
                             # print(j)
                             grid[i][j].color = knn(grid,grid[i][j],k=3,distance_fn=euclidean_distance, choice_fn=mode)
+                            if(grid[i][j].color == 1):
+                                b_count += 1
+                            else:
+                                r_count += 1
                             # pygame.display.update()
                             break
+    screen.fill(black)
+    red_count(r_count)
+    blue_count(b_count)
 
     #drawing on the screen
     for row in grid:
         for node in row:
             pygame.draw.circle(screen, color[node.color], (node.x, node.y), radius)
             pygame.draw.circle(screen, white, (node.x, node.y), radius, 1)
-
+    
     pygame.display.flip()
+    # clear_red()
