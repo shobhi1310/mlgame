@@ -75,11 +75,6 @@ for i in range(int(R/2)):
             grid[x][y].color = red
             check = False
 
-#drawing on the screen
-for row in grid:
-    for node in row:
-        pygame.draw.circle(screen, node.color, (node.x, node.y), radius)
-        pygame.draw.circle(screen, white, (node.x, node.y), radius, 1)
 
 # print(grid)
 
@@ -103,9 +98,13 @@ while running:
                             print(i)
                             print(j)
                             grid[i][j].color = blue
-                            pygame.display.update()
+                            # pygame.display.update()
                             break
-
-                # print(pygame.mouse.get_pos()[0])
+                        
+    #drawing on the screen
+    for row in grid:
+        for node in row:
+            pygame.draw.circle(screen, node.color, (node.x, node.y), radius)
+            pygame.draw.circle(screen, white, (node.x, node.y), radius, 1)
 
     pygame.display.flip()
