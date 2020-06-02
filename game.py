@@ -20,29 +20,68 @@ from pygame.locals import (
 
 pygame.init()
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-N = 100
-R = 6
-radius = 7
+SCREEN_WIDTH = 1000
+SCREEN_HEIGHT = 800
+start_x = 20
+start_y = 20
+end = 501
+rows = 20
+cols = 30
+width = 5
+height = 5
+R = 8
+radius = 10
 
 blue = (0,0,255)
 red = (255,0,0)
+dull = (69, 79, 70)
 white = (255,255,255)
+black = (0,0,0)
+
+color=[dull,blue,red]
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 running = True
 
-list = []
-clickable = []
+#initialising grid
+grid = []
+y = start_y
+for i in range(rows):
+    r = []
+    x = start_x
+    for j in range(cols):
+        r.append(Node(x,y,dull))
+        x += 2*radius + width
+    grid.append(r)
+    y += 2*radius + height
 
-for i in range(100):
-    list.append(Node(random.randint(0,500),random.randint(0,500),random.randint(0,2)))
+#coloring blue
+for i in range(int(R/2)):
+    x = random.randint(0,rows-1)
+    y = random.randint(0,cols-1)
+    grid[x][y].color = blue
 
-for i in range(100):
-        pygame.draw.circle(screen, blue, (list[i].x, list[i].y), radius)
-        pygame.draw.circle(screen, white, (list[i].x, list[i].y), radius, 1)
+#coloring red
+for i in range(int(R/2)):
+    check = True
+    while(check):
+        x = random.randint(0,rows-1)
+        y = random.randint(0,cols-1)
+        if grid[x][y].color == blue:
+            x = random.randint(0,rows-1)
+            y = random.randint(0,cols-1)
+        else:
+            grid[x][y].color = red
+            check = False
+
+#drawing on the screen
+for row in grid:
+    for node in row:
+        pygame.draw.circle(screen, node.color, (node.x, node.y), radius)
+        pygame.draw.circle(screen, white, (node.x, node.y), radius, 1)
+
+# print(grid)
 
 # Main loop
 while running:
@@ -53,8 +92,20 @@ while running:
         elif event.type == QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            click = screen.get_at(pygame.mouse.get_pos()) == blue
+            click = screen.get_at(pygame.mouse.get_pos()) == dull
             if click == 1:
-                print('CLICKED!')
+                X = pygame.mouse.get_pos()[0]
+                Y = pygame.mouse.get_pos()[1]
+                
+                for i in range(rows):
+                    for j in range(cols):
+                        if((X-grid[i][j].x)**2 + (Y-grid[i][j].y)**2 - radius**2) <= 0:
+                            print(i)
+                            print(j)
+                            grid[i][j].color = blue
+                            pygame.display.update()
+                            break
 
-    pygame.display.update()
+                # print(pygame.mouse.get_pos()[0])
+
+    pygame.display.flip()
