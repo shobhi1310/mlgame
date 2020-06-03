@@ -10,14 +10,14 @@ class Node():
         self.y = y
         self.color = color
 
-def knn(grid, query_node, k, distance_fn, choice_fn):
+def knn(grid, query_node, distance_fn, choice_fn):
     neighbor_distances_and_indices = []
     
     for i in range(len(grid)):
         for j in range(len(grid[i])):
             if( grid[i][j].x == query_node.x and grid[i][j].y == query_node.y):
                 pass
-            elif(grid[i][j].color > 0):
+            elif(grid[i][j].color > 1):
                 distance = distance_fn(grid[i][j],query_node)
                 neighbor_distances_and_indices.append((distance,i,j))
 
@@ -58,77 +58,149 @@ from pygame.locals import (
 pygame.init()
 
 SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = 800
+SCREEN_HEIGHT = 700
 start_x = 60
 start_y = 80
 end = 501
-rows = 20
-cols = 30
+rows = 8
+cols = 5
 width = 5
 height = 5
-R = 8
-radius = 10
-r_count = int(R/2)
-b_count = int(R/2)
+radius = 15
 
 blue = (0,0,255)
 red = (255,0,0)
 dull = (69, 79, 70)
 white = (255,255,255)
 black = (0,0,0)
+green = (32, 214, 26)
 
-color=[dull,blue,red]
+color=[black,dull,blue,red]
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+home_page = pygame.image.load('images/home.png')
+instruction_page = pygame.image.load('images/instr.png')
+won_page = pygame.image.load('images/won.png')
+lost_page = pygame.image.load('images/lost.png')
+draw_page = pygame.image.load('images/draw.png')
+
+selector = [(int(20*SCREEN_WIDTH/100), int(SCREEN_HEIGHT/2)),(int(60*SCREEN_WIDTH/100), int(SCREEN_HEIGHT/2))]
 
 running = True
-
+k = 3 # by default k = 3
 
 def red_count(r_count):
     font = pygame.font.SysFont('comicsansms', 40)
     text = font.render("Reds: "+str(r_count), True, red)
     screen.blit(text,(10,0))
 
-def blue_count(r_count):
+def blue_count(b_count):
     font = pygame.font.SysFont('comicsansms', 40)
     text = font.render("Blues: "+str(b_count), True, blue)
     screen.blit(text,(800,0))
 
+
+class button():
+    def __init__(self, color, x,y,width,height, text=''):
+        self.color = color
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.text = text
+
+    def draw(self,win,outline=None):
+        #Call this method to draw the button on the screen
+        if outline:
+            pygame.draw.rect(win, outline, (self.x-2,self.y-2,self.width+4,self.height+4),0)
+            
+        pygame.draw.rect(win, self.color, (self.x,self.y,self.width,self.height),0)
+        
+        if self.text != '':
+            font = pygame.font.SysFont('comicsans', 60)
+            text = font.render(self.text, 1, (0,0,0))
+            win.blit(text, (self.x + (self.width/2 - text.get_width()/2), self.y + (self.height/2 - text.get_height()/2)))
+
+    def isOver(self, pos):
+        #Pos is the mouse position or a tuple of (x,y) coordinates
+        if pos[0] > self.x and pos[0] < self.x + self.width:
+            if pos[1] > self.y and pos[1] < self.y + self.height:
+                return True
+            
+        return False
+
 #initialising grid
+R = 8
+r_count = int(R/2)
+b_count = int(R/2)
+black_count = 2*R
+total = rows*cols - black_count
 grid = []
-y = start_y
-for i in range(rows):
-    r = []
-    x = start_x
-    for j in range(cols):
-        r.append(Node(x,y,0))
-        x += 2*radius + width
-    grid.append(r)
-    y += 2*radius + height
+def initialize():
+    global grid
+    global r_count
+    global b_count
+    grid = []
+    y = start_y
+    for i in range(rows):
+        r = []
+        x = start_x
+        for j in range(cols):
+            r.append(Node(x,y,1))
+            x += 2*radius + width
+        grid.append(r)
+        y += 2*radius + height
 
-#coloring blue
-for i in range(int(R/2)):
-    x = random.randint(0,rows-1)
-    y = random.randint(0,cols-1)
-    grid[x][y].color = 1
-
-#coloring red
-for i in range(int(R/2)):
-    check = True
-    while(check):
+    #coloring blue
+    for i in range(int(R/2)):
         x = random.randint(0,rows-1)
         y = random.randint(0,cols-1)
-        if grid[x][y].color == 1:
+        grid[x][y].color = 2
+
+    #coloring red
+    for i in range(int(R/2)):
+        check = True
+        while(check):
             x = random.randint(0,rows-1)
             y = random.randint(0,cols-1)
-        else:
-            grid[x][y].color = 2
-            check = False
+            if grid[x][y].color == 2:
+                x = random.randint(0,rows-1)
+                y = random.randint(0,cols-1)
+            else:
+                grid[x][y].color = 3
+                check = False
 
-# print(grid)
+    #coloring black
+    for i in range(black_count):
+        check = True
+        while(check):
+            x = random.randint(0,rows-1)
+            y = random.randint(0,cols-1)
+            if grid[x][y].color == 2 or grid[x][y].color == 3:
+                x = random.randint(0,rows-1)
+                y = random.randint(0,cols-1)
+            else:
+                grid[x][y].color = 0
+                check = False
+    
+    # re-initialise            
+    r_count = int(R/2)
+    b_count = int(R/2)
 
-# Main loop
-while running:
+start = button(green,int(10*SCREEN_WIDTH/100),SCREEN_HEIGHT-60,100,40,'Start')
+instr = button(green,int(40*SCREEN_WIDTH/100),SCREEN_HEIGHT-60,230,40,'Instruction')
+reMatch = button(green,int(SCREEN_WIDTH/2),SCREEN_HEIGHT-60,200,40,'Rematch')
+proceed = button(green,int(10*SCREEN_WIDTH/100),SCREEN_HEIGHT/2,130,40,'Proceed')
+
+#Game state
+state = 0
+
+def home():
+    global running
+    global state
+    screen.blit(home_page,(0,0))
+    start.draw(screen,red)
+    instr.draw(screen,red)
     for event in pygame.event.get():
         if event.type == KEYDOWN:
             if event.key == K_ESCAPE:
@@ -136,32 +208,168 @@ while running:
         elif event.type == QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            click = screen.get_at(pygame.mouse.get_pos()) == dull
-            if click == 1:
-                X = pygame.mouse.get_pos()[0]
-                Y = pygame.mouse.get_pos()[1]
-                
-                for i in range(rows):
-                    for j in range(cols):
-                        if((X-grid[i][j].x)**2 + (Y-grid[i][j].y)**2 - radius**2) <= 0:
-                            # print(i)
-                            # print(j)
-                            grid[i][j].color = knn(grid,grid[i][j],k=3,distance_fn=euclidean_distance, choice_fn=mode)
-                            if(grid[i][j].color == 1):
-                                b_count += 1
-                            else:
-                                r_count += 1
-                            # pygame.display.update()
-                            break
-    screen.fill(black)
+            if start.isOver(pygame.mouse.get_pos()):
+                state = 2
+            elif instr.isOver(pygame.mouse.get_pos()):
+                state = 1
+
+def instruct():
+    global running
+    global state
+    screen.blit(instruction_page,(0,0))
+    start.draw(screen,red)
+    for event in pygame.event.get():
+        if event.type == KEYDOWN:
+            if event.key == K_ESCAPE:
+                running = False
+        elif event.type == QUIT:
+            running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if start.isOver(pygame.mouse.get_pos()):
+                state = 2
+
+def choose_k():
+    global running
+    global state
+    global k
+    font = pygame.font.SysFont(None, 25)
+    text = font.render('Choose K to be a odd integer from 3 to 9 then press ENTER.', True, red)
+    screen.blit(text,(int(20*SCREEN_WIDTH/100),SCREEN_HEIGHT/2))
+    # proceed.draw(screen,red)
+    for event in pygame.event.get():
+        if event.type == KEYDOWN:
+            if event.key == K_ESCAPE:
+                running = False
+        elif event.type == QUIT:
+            running = False
+        elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_RETURN:
+                    state = 3
+                else:
+                    k = int(event.key) - 48
+                    # print(k)
+        # elif event.type == pygame.MOUSEBUTTONDOWN:
+        #     if proceed.isOver(pygame.mouse.get_pos()):
+        #         state += 1
+
+
+selected = 0 #by default blue.
+def choose_side():
+    global running
+    global state
+    global selected
+    # blue
+    pygame.draw.circle(screen, color[2], selector[0], radius)
+    pygame.draw.circle(screen, white, selector[0], radius, 1)
+
+    # red
+    pygame.draw.circle(screen, color[3], selector[1], radius)
+    pygame.draw.circle(screen, white, selector[1], radius, 1)
+
+    # proceed.draw(screen,red)
+    for event in pygame.event.get():
+        if event.type == KEYDOWN:
+            if event.key == K_ESCAPE:
+                running = False
+        elif event.type == QUIT:
+            running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if screen.get_at(pygame.mouse.get_pos()) == red:
+                selected = 1
+            state = 4
+
+
+def game():
+    global r_count
+    global b_count
+    global running
+    global state
+    for event in pygame.event.get():
+        if event.type == KEYDOWN:
+            if event.key == K_ESCAPE:
+                running = False
+        elif event.type == QUIT:
+            running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            X = pygame.mouse.get_pos()[0]
+            Y = pygame.mouse.get_pos()[1]
+            # print(X,Y)
+            for i in range(rows):
+                for j in range(cols):
+                    if((X-grid[i][j].x)**2 + (Y-grid[i][j].y)**2 - radius**2) <= 0:
+                        # print(i)
+                        # print(j)
+                        grid[i][j].color = knn(grid,grid[i][j],distance_fn=euclidean_distance, choice_fn=mode)
+                        # print(grid[i][j].color)
+                        if(grid[i][j].color == 2):
+                            b_count += 1
+                        else:
+                            r_count += 1
+                        # pygame.display.update()
+                        break
+    #score display
     red_count(r_count)
     blue_count(b_count)
+
+    #state changer
+    if r_count + b_count == total:
+        print(total)
+        state = 5
 
     #drawing on the screen
     for row in grid:
         for node in row:
             pygame.draw.circle(screen, color[node.color], (node.x, node.y), radius)
-            pygame.draw.circle(screen, white, (node.x, node.y), radius, 1)
-    
+            if node.color != 0:
+                pygame.draw.circle(screen, white, (node.x, node.y), radius, 1)
+
+    # screen.fill(black)
+
+def end_screen():
+    global running
+    global state
+    if(selected==0):    # player is blue
+        if(b_count>r_count):
+            screen.blit(won_page,(0,0))
+        elif(b_count==r_count):
+            screen.blit(draw_page,(0,0))
+        else:
+            screen.blit(lost_page,(0,0))
+    else:
+        if(b_count<r_count):
+            screen.blit(won_page,(0,0))
+        elif(b_count==r_count):
+            screen.blit(draw_page,(0,0))
+        else:
+            screen.blit(lost_page,(0,0))
+
+    reMatch.draw(screen,red)
+    for event in pygame.event.get():
+        if event.type == KEYDOWN:
+            if event.key == K_ESCAPE:
+                running = False
+        elif event.type == QUIT:
+            running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if reMatch.isOver(pygame.mouse.get_pos()):
+                initialize()
+                state = 4
+
+# Main loop
+initialize()
+while running:
+    screen.fill(black)
+    if state == 0:
+        home()
+    elif state == 1:
+        instruct()
+    elif state == 2:
+        choose_k()
+    elif state == 3:
+        choose_side()
+    elif state == 4:
+        game()
+    elif state == 5:
+        end_screen()
     pygame.display.flip()
     # clear_red()
