@@ -2,6 +2,7 @@ import pygame
 import random
 from collections import Counter
 import math
+import time
 
 class Node():
 
@@ -10,7 +11,8 @@ class Node():
         self.y = y
         self.color = color
 
-def knn(grid, query_node, distance_fn, choice_fn):
+def knn(grid, query_node, k, distance_fn, choice_fn):
+    # print(k)
     neighbor_distances_and_indices = []
     
     for i in range(len(grid)):
@@ -26,16 +28,14 @@ def knn(grid, query_node, distance_fn, choice_fn):
     
     k_nearest_distances_and_indices = sorted_neighbor_distances_and_indices[:k]
     
-    k_nearest_labels = [grid[i][j].color for distance, i, j in k_nearest_distances_and_indices]
+    k_nearest_labels = [grid[i][j].color for distance, i, j in k_nearest_distances_and_indices] 
 
-    return choice_fn(k_nearest_labels)
+    return k_nearest_distances_and_indices, choice_fn(k_nearest_labels)
 
 def mean(labels):
     return sum(labels) / len(labels)
 
 def mode(labels):
-    # print(labels)
-    # print(Counter(labels).most_common(1))
     return Counter(labels).most_common(1)[0][0]
 
 def euclidean_distance(point1, point2):
@@ -57,16 +57,20 @@ from pygame.locals import (
 
 pygame.init()
 
+FPS = 30 # frames per second setting
+fpsClock = pygame.time.Clock()
+
+
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 700
-start_x = 60
-start_y = 80
+start_x = 120
+start_y = 120
 end = 501
 rows = 8
 cols = 5
 width = 5
 height = 5
-radius = 15
+radius = 20
 
 blue = (0,0,255)
 red = (255,0,0)
@@ -83,11 +87,12 @@ instruction_page = pygame.image.load('images/instr.png')
 won_page = pygame.image.load('images/won.png')
 lost_page = pygame.image.load('images/lost.png')
 draw_page = pygame.image.load('images/draw.png')
+legion_page = pygame.image.load('images/legion.png')
 
-selector = [(int(20*SCREEN_WIDTH/100), int(SCREEN_HEIGHT/2)),(int(60*SCREEN_WIDTH/100), int(SCREEN_HEIGHT/2))]
+selector = [(int(20*SCREEN_WIDTH/100), int(SCREEN_HEIGHT/2)),(int(80*SCREEN_WIDTH/100), int(SCREEN_HEIGHT/2))]
 
 running = True
-k = 3 # by default k = 3
+k = -1 # by default k = -1
 
 def red_count(r_count):
     font = pygame.font.SysFont('comicsansms', 40)
@@ -140,7 +145,9 @@ def initialize():
     global grid
     global r_count
     global b_count
+    global k_nearest_neighbors
     grid = []
+    k_nearest_neighbors = []
     y = start_y
     for i in range(rows):
         r = []
@@ -233,8 +240,18 @@ def choose_k():
     global state
     global k
     font = pygame.font.SysFont(None, 25)
-    text = font.render('Choose K to be a odd integer from 3 to 9 then press ENTER.', True, red)
+    text = font.render('Choose K to be a odd integer from 3 to 9 then press ENTER. or BACKSPACE to delete', True, red)
     screen.blit(text,(int(20*SCREEN_WIDTH/100),SCREEN_HEIGHT/2))
+
+    font_k = pygame.font.SysFont(None, 25)
+    text_k = font.render('Chosen K : ', True, red)
+    screen.blit(text_k,(int(20*SCREEN_WIDTH/100),SCREEN_HEIGHT/2+50))
+
+    font_hint = pygame.font.SysFont(None, 25)
+    if k!=-1:
+        text_hint = font.render(str(k), True, red)
+        screen.blit(text_hint,(int(20*SCREEN_WIDTH/100 + 100),SCREEN_HEIGHT/2+50))
+    pygame.display.flip()
     # proceed.draw(screen,red)
     for event in pygame.event.get():
         if event.type == KEYDOWN:
@@ -245,12 +262,10 @@ def choose_k():
         elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_RETURN:
                     state = 3
+                elif event.key == pygame.K_BACKSPACE:
+                    k = -1
                 else:
                     k = int(event.key) - 48
-                    # print(k)
-        # elif event.type == pygame.MOUSEBUTTONDOWN:
-        #     if proceed.isOver(pygame.mouse.get_pos()):
-        #         state += 1
 
 
 selected = 0 #by default blue.
@@ -258,6 +273,7 @@ def choose_side():
     global running
     global state
     global selected
+    screen.blit(legion_page,(0,0))
     # blue
     pygame.draw.circle(screen, color[2], selector[0], radius)
     pygame.draw.circle(screen, white, selector[0], radius, 1)
@@ -278,12 +294,13 @@ def choose_side():
                 selected = 1
             state = 4
 
-
+k_nearest_neighbors = []
 def game():
     global r_count
     global b_count
     global running
     global state
+    global k_nearest_neighbors
     for event in pygame.event.get():
         if event.type == KEYDOWN:
             if event.key == K_ESCAPE:
@@ -293,20 +310,17 @@ def game():
         elif event.type == pygame.MOUSEBUTTONDOWN:
             X = pygame.mouse.get_pos()[0]
             Y = pygame.mouse.get_pos()[1]
-            # print(X,Y)
             for i in range(rows):
                 for j in range(cols):
                     if((X-grid[i][j].x)**2 + (Y-grid[i][j].y)**2 - radius**2) <= 0:
-                        # print(i)
-                        # print(j)
-                        grid[i][j].color = knn(grid,grid[i][j],distance_fn=euclidean_distance, choice_fn=mode)
-                        # print(grid[i][j].color)
-                        if(grid[i][j].color == 2):
-                            b_count += 1
-                        else:
-                            r_count += 1
-                        # pygame.display.update()
-                        break
+                        if grid[i][j].color == 1:
+                            k_nearest_neighbors, grid[i][j].color = knn(grid,grid[i][j],k,distance_fn=euclidean_distance, choice_fn=mode)
+                            # highlight(grid,k_nearest_neighbors)
+                            if(grid[i][j].color == 2):
+                                b_count += 1
+                            else:
+                                r_count += 1
+                            break
     #score display
     red_count(r_count)
     blue_count(b_count)
@@ -322,8 +336,16 @@ def game():
             pygame.draw.circle(screen, color[node.color], (node.x, node.y), radius)
             if node.color != 0:
                 pygame.draw.circle(screen, white, (node.x, node.y), radius, 1)
+    
+    if len(k_nearest_neighbors) != 0:
+        for distance, i, j in k_nearest_neighbors:
+            pygame.draw.circle(screen, (210, 235, 52), (grid[i][j].x, grid[i][j].y), radius, 4)
+        
+        # time.sleep(0.2)
+        
+        for distance, i, j in k_nearest_neighbors:
+            pygame.draw.circle(screen, white, (grid[i][j].x, grid[i][j].y), radius, 1)
 
-    # screen.fill(black)
 
 def end_screen():
     global running
@@ -372,4 +394,3 @@ while running:
     elif state == 5:
         end_screen()
     pygame.display.flip()
-    # clear_red()
