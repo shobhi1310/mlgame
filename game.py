@@ -160,12 +160,6 @@ def initialize():
 
     #coloring blue
     for i in range(int(R/2)):
-        x = random.randint(0,rows-1)
-        y = random.randint(0,cols-1)
-        grid[x][y].color = 2
-
-    #coloring red
-    for i in range(int(R/2)):
         check = True
         while(check):
             x = random.randint(0,rows-1)
@@ -174,16 +168,29 @@ def initialize():
                 x = random.randint(0,rows-1)
                 y = random.randint(0,cols-1)
             else:
-                grid[x][y].color = 3
+                grid[x][y].color = 2
                 check = False
 
-    #coloring black
-    for i in range(black_count):
+    #coloring red
+    for i in range(int(R/2)):
         check = True
         while(check):
             x = random.randint(0,rows-1)
             y = random.randint(0,cols-1)
             if grid[x][y].color == 2 or grid[x][y].color == 3:
+                x = random.randint(0,rows-1)
+                y = random.randint(0,cols-1)
+            else:
+                grid[x][y].color = 3
+                check = False
+
+    #coloring black
+    for i in range(2*R):
+        check = True
+        while(check):
+            x = random.randint(0,rows-1)
+            y = random.randint(0,cols-1)
+            if grid[x][y].color == 2 or grid[x][y].color == 3 or grid[x][y].color == 0:
                 x = random.randint(0,rows-1)
                 y = random.randint(0,cols-1)
             else:
@@ -193,6 +200,11 @@ def initialize():
     # re-initialise            
     r_count = int(R/2)
     b_count = int(R/2)
+
+def reset():
+    global k
+    k = -1
+    initialize()
 
 start = button(green,int(10*SCREEN_WIDTH/100),SCREEN_HEIGHT-60,100,40,'Start')
 instr = button(green,int(40*SCREEN_WIDTH/100),SCREEN_HEIGHT-60,230,40,'Instruction')
@@ -374,8 +386,8 @@ def end_screen():
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if reMatch.isOver(pygame.mouse.get_pos()):
-                initialize()
-                state = 4
+                reset()
+                state = 2
 
 # Main loop
 initialize()
