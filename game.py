@@ -63,14 +63,15 @@ fpsClock = pygame.time.Clock()
 
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 700
-start_x = 120
-start_y = 120
 end = 501
 rows = 8
 cols = 5
 width = 5
 height = 5
 radius = 20
+
+start_x = int(SCREEN_WIDTH/2) - int((cols*2*radius)/2 + width*(cols-1)/2)
+start_y = 120
 
 blue = (0,0,255)
 red = (255,0,0)
@@ -82,14 +83,17 @@ green = (32, 214, 26)
 color=[black,dull,blue,red]
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("KNN Game !!")
+
 home_page = pygame.image.load('images/home.png')
 instruction_page = pygame.image.load('images/instr.png')
 won_page = pygame.image.load('images/won.png')
 lost_page = pygame.image.load('images/lost.png')
 draw_page = pygame.image.load('images/draw.png')
 legion_page = pygame.image.load('images/legion.png')
+choice_page = pygame.image.load('images/choice.png')
 
-selector = [(int(20*SCREEN_WIDTH/100), int(SCREEN_HEIGHT/2)),(int(80*SCREEN_WIDTH/100), int(SCREEN_HEIGHT/2))]
+selector = [(int(10*SCREEN_WIDTH/100), int(SCREEN_HEIGHT/2)),(int(80*SCREEN_WIDTH/100), int(SCREEN_HEIGHT/2))]
 
 running = True
 k = -1 # by default k = -1
@@ -135,17 +139,19 @@ class button():
         return False
 
 #initialising grid
-R = 8
-r_count = int(R/2)
-b_count = int(R/2)
-black_count = 2*R
-total = rows*cols - black_count
+R = 0
+r_count = 0
+b_count = 0
+black_count = 0
+total = 0
 grid = []
 def initialize():
     global grid
     global r_count
     global b_count
+    global black_count
     global k_nearest_neighbors
+    global total
     grid = []
     k_nearest_neighbors = []
     y = start_y
@@ -200,6 +206,8 @@ def initialize():
     # re-initialise            
     r_count = int(R/2)
     b_count = int(R/2)
+    black_count = 2*R
+    total = rows*cols - black_count
 
 def reset():
     global k
@@ -251,9 +259,14 @@ def choose_k():
     global running
     global state
     global k
+    global rows
+    global cols
+    global radius
+    global R
+    screen.blit(choice_page,(0,0))
     font = pygame.font.SysFont(None, 25)
     text = font.render('Choose K to be a odd integer from 3 to 9 then press ENTER. or BACKSPACE to delete', True, red)
-    screen.blit(text,(int(20*SCREEN_WIDTH/100),SCREEN_HEIGHT/2))
+    screen.blit(text,(int(10*SCREEN_WIDTH/100),SCREEN_HEIGHT/2))
 
     font_k = pygame.font.SysFont(None, 25)
     text_k = font.render('Chosen K : ', True, red)
@@ -278,6 +291,22 @@ def choose_k():
                     k = -1
                 else:
                     k = int(event.key) - 48
+                    if k == 3:
+                        rows = 8
+                        cols = 5
+                        radius = 20
+                        R = 8
+                    elif k == 5:
+                        rows = 10
+                        cols = 8
+                        radius = 15
+                        R = 12
+                    else:
+                        rows = 12
+                        cols = 9
+                        radius = 10
+                        R = 16
+                    initialize()
 
 
 selected = 0 #by default blue.
@@ -287,12 +316,12 @@ def choose_side():
     global selected
     screen.blit(legion_page,(0,0))
     # blue
-    pygame.draw.circle(screen, color[2], selector[0], radius)
-    pygame.draw.circle(screen, white, selector[0], radius, 1)
+    pygame.draw.circle(screen, color[2], selector[0], 20)
+    pygame.draw.circle(screen, white, selector[0], 21, 2)
 
     # red
-    pygame.draw.circle(screen, color[3], selector[1], radius)
-    pygame.draw.circle(screen, white, selector[1], radius, 1)
+    pygame.draw.circle(screen, color[3], selector[1], 20)
+    pygame.draw.circle(screen, white, selector[1], 21, 2)
 
     # proceed.draw(screen,red)
     for event in pygame.event.get():
@@ -339,7 +368,6 @@ def game():
 
     #state changer
     if r_count + b_count == total:
-        print(total)
         state = 5
 
     #drawing on the screen
@@ -390,7 +418,6 @@ def end_screen():
                 state = 2
 
 # Main loop
-initialize()
 while running:
     screen.fill(black)
     if state == 0:
